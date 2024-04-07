@@ -7,7 +7,7 @@ on:
 
 env:
   GITHUB_EMAIL: ${{ secrets.EMAIL }}
-  GITHUB_TOKEN: ${{ secrets.API_TOKEN_GITHUB }}
+  GH_TOKEN: ${{ secrets.GH_TOKEN }}
   GITHUB_USER: ${{ secrets.USERNAME }}
 
 jobs:
