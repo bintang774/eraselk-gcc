@@ -1,0 +1,69 @@
+name: GCC+LLD Build
+
+on:
+  workflow_dispatch:
+  watch:
+    types: [started]
+
+env:
+  GITHUB_EMAIL: ${{ secrets.EMAIL }}
+  GITHUB_TOKEN: ${{ secrets.API_TOKEN_GITHUB }}
+  GITHUB_USER: ${{ secrets.USERNAME }}
+
+jobs:
+  build-arm64-tc:
+    runs-on: ubuntu-latest
+    container:
+      image: fedora:latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set build date
+      id: get-date
+      run: |
+        ln -sf /usr/share/zoneinfo/Asia/Makassar /etc/localtime
+        echo ::set-output name=date::$(/bin/date -u "+%Y%m%d")
+    - name: Setup
+      run: |
+        sudo dnf groupinstall "Development tools" -y
+        sudo dnf install mpfr-devel gmp-devel libmpc-devel zlib-devel glibc-devel.i686 glibc-devel binutils-devel g++ texinfo bison flex cmake which ninja-build clang lld bzip2 binutils-arm-linux-gnu binutils-aarch64-linux-gnu file -y
+    - name: Build
+      run: |
+        chmod a+x build-*.sh
+        ./build-gcc.sh -a arm64
+        ./build-lld.sh -a arm64
+        script_dir=$(pwd)
+        cd gcc-arm64
+        ./bin/aarch64-elf-gcc -v 2>&1 | tee ../gcc-version
+        ./bin/aarch64-elf-ld.lld -v 2>&1 | tee ../lld-arm64-version
+        bash "$script_dir/strip-binaries.sh"
+        cd ../ && cat lld-arm64-version >> gcc-version
+    - name: Create tarball
+      run: |
+        tar -cvf eraselk-gcc-arm64-$(/bin/date -u '+%d%m%Y').xz gcc-arm64/*
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: aarch64-tarball
+        path: |
+          *.xz
+          gcc-version
+          
+  publish-release:
+    needs: [build-arm64-tc]
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Restoring artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: aarch64-tarball
+          path: ${{ github.workspace }}
+      - name: Release Tag
+        id: release_tag
+        run: echo "TAG_NAME='$(date -u +%d%m%Y)'" >> $GITHUB_ENV
+      - name: Create Release
+        run: |
+          gh release create ${{ env.TAG_NAME }} -F aarch64-tarball/gcc-version */*.xz
