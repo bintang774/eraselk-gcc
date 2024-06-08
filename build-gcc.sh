@@ -40,9 +40,13 @@ download_resources() {
   sed -i '/^development=/s/true/false/' binutils/bfd/development.sh
   echo "Cloned binutils!"
   echo "Cloning GCC"
-  git clone git://gcc.gnu.org/git/gcc.git -b releases/gcc-9.5.0 gcc --depth=1
+  git clone git://gcc.gnu.org/git/gcc.git -b releases/gcc-14.1.0 gcc --depth=1
   cd "${WORK_DIR}"
+  if [[ -d "${WORK_DIR}/binutils" ]] && [[ -d "${WORK_DIR}/gcc" ]]; then
   echo "Downloaded prerequisites!"
+  else
+  exit 1
+  fi
 }
 
 build_binutils() {
@@ -71,7 +75,7 @@ build_gcc() {
   echo "Building GCC"
   cd gcc
   ./contrib/download_prerequisites
-  echo "Bleeding Edge" > gcc/DEV-PHASE
+  echo "Release" > gcc/DEV-PHASE
   cd ../
   mkdir build-gcc
   cd build-gcc
