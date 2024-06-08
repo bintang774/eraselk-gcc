@@ -30,8 +30,8 @@ jobs:
     - name: Build
       run: |
         chmod a+x build-*.sh
-        ./build-gcc.sh -a arm64gnu
-        ./build-lld.sh -a arm64gnu
+        ./build-gcc.sh -a arm64
+        ./build-lld.sh -a arm64
         script_dir=$(pwd)
         cd gcc-arm64
         ./bin/aarch64-elf-gcc -v 2>&1 | tee ../gcc-version
