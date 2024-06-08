@@ -13,9 +13,7 @@ env:
 jobs:
   build-arm64-tc:
     runs-on: ubuntu-latest
-    container:
-      image: fedora:latest
-
+    
     steps:
     - uses: actions/checkout@v4
     - name: Set build date
@@ -25,13 +23,15 @@ jobs:
         echo ::set-output name=date::$(/bin/date -u "+%Y%m%d")
     - name: Setup
       run: |
-        sudo dnf groupinstall "Development tools" -y
-        sudo dnf install mpfr-devel gmp-devel libmpc-devel zlib-devel glibc-devel.i686 glibc-devel binutils-devel g++ texinfo bison flex cmake which ninja-build clang lld bzip2 binutils-arm-linux-gnu binutils-aarch64-linux-gnu file -y
+        sudo apt-get update -y
+        sudo apt-get upgrade -y
+        sudo apt-get install build-essential -y
+        sudo apt-get install libmpfr-dev libgmp-dev libmpc-dev zlib1g-dev g++-multilib glibc-source binutils-dev g++ texinfo bison flex cmake ninja-build clang lld bzip2 binutils-arm-linux-gnueabi binutils-aarch64-linux-gnu file -y
     - name: Build
       run: |
         chmod a+x build-*.sh
-        ./build-gcc.sh -a arm64
-        ./build-lld.sh -a arm64
+        ./build-gcc.sh -a arm64gnu
+        ./build-lld.sh -a arm64gnu
         script_dir=$(pwd)
         cd gcc-arm64
         ./bin/aarch64-elf-gcc -v 2>&1 | tee ../gcc-version
